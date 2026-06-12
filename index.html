@@ -5,134 +5,125 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ระบบรวมรายการยาเพื่อสั่งซื้อ</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  </script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f4f8; color: #333; font-size: 14px; }
-    header { background: linear-gradient(135deg, #1a56db, #0e9f6e); color: white; padding: 22px 32px; }
-    header h1 { font-size: 1.5rem; }
-    header p  { opacity: 0.85; margin-top: 4px; font-size: 0.88rem; }
-    .container { max-width: 1400px; margin: 28px auto; padding: 0 16px; }
-    .card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 26px; margin-bottom: 22px; }
-    .card h2 { font-size: 1rem; margin-bottom: 16px; color: #1a56db; }
-    .upload-zone { border: 2.5px dashed #93c5fd; border-radius: 10px; padding: 36px; text-align: center; cursor: pointer; background: #eff6ff; transition: background 0.2s; }
-    .upload-zone:hover, .upload-zone.dragover { background: #dbeafe; }
-    .upload-zone input { display: none; }
-    .upload-zone .icon { font-size: 2.6rem; }
-    .upload-zone p { margin-top: 8px; color: #555; }
-    .upload-zone span { color: #1a56db; font-weight: 600; }
-    .file-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f8fafc; border-radius: 8px; margin-top: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; }
-    .file-item .fname { flex: 1; min-width: 180px; font-size: 0.88rem; }
-    .file-date-badge { background: #fef9c3; border: 1px solid #fde047; color: #713f12; border-radius: 6px; padding: 3px 10px; font-size: 0.78rem; white-space: nowrap; }
-    .file-type-pdf  { background: #fde8e8; border: 1px solid #f98080; color: #9b1c1c; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 700; }
-    .file-type-xlsx { background: #def7ec; border: 1px solid #31c48d; color: #03543f; border-radius: 4px; padding: 1px 7px; font-size: 0.72rem; font-weight: 700; }
-    .status-ok   { color: #0e9f6e; font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
-    .status-err  { color: #e02424; font-size: 0.82rem; font-weight: 600; }
-    .status-wait { color: #94a3b8; font-size: 0.82rem; }
-    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.88rem; cursor: pointer; font-weight: 600; transition: opacity 0.2s; white-space: nowrap; }
-    .btn:hover { opacity: 0.85; } .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-primary { background: #1a56db; color: white; }
-    .btn-success { background: #0e9f6e; color: white; }
-    .btn-danger  { background: #e02424; color: white; }
-    .btn-gray    { background: #6b7280; color: white; }
-    .btn-outline { background: white; color: #1a56db; border: 1.5px solid #1a56db; }
-    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
-    .date-banner { background: linear-gradient(135deg,#fef9c3,#fef3c7); border:1px solid #fde047; border-radius:10px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-    .date-banner .icon { font-size:1.8rem; }
-    .date-banner .title { font-size:0.78rem; color:#92400e; font-weight:600; }
-    .date-banner .value { font-size:1.1rem; font-weight:700; color:#713f12; }
-    .date-arrow { color:#d97706; font-size:1.2rem; padding:0 4px; }
-    .stats { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
-    .stat-box { flex:1; min-width:130px; padding:14px 18px; border-radius:10px; text-align:center; }
-    .stat-box .num { font-size:1.8rem; font-weight:700; }
-    .stat-box .lbl { font-size:0.76rem; margin-top:3px; opacity:0.85; }
-    .blue{background:#dbeafe;color:#1e40af;} .green{background:#d1fae5;color:#065f46;}
-    .purple{background:#ede9fe;color:#5b21b6;} .orange{background:#ffedd5;color:#9a3412;}
-    .table-wrap { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; font-size:0.83rem; min-width:1050px; }
-    thead tr { background:#1a56db; color:white; }
-    th { padding:10px 12px; text-align:left; white-space:nowrap; }
-    td { padding:9px 12px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
-    tbody tr:hover { background:#f0f9ff; }
-    tbody tr:nth-child(even) { background:#f8fafc; }
-    tbody tr:nth-child(even):hover { background:#f0f9ff; }
-    .tr { text-align:right; font-weight:600; }
-    tfoot tr { background:#1e3a8a; color:white; font-weight:700; }
-    tfoot td { padding:10px 12px; }
-    .filter-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
-    .filter-row input, .filter-row select { padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:0.86rem; }
-    .filter-row input:focus, .filter-row select:focus { outline:none; border-color:#1a56db; }
-    .filter-row input { flex:1; min-width:200px; }
-    .tag { display:inline-block; padding:2px 7px; background:#e0f2fe; color:#0369a1; border-radius:20px; font-size:0.72rem; margin:1px; }
-    .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:600; }
-    .badge-blue{background:#dbeafe;color:#1e40af;} .badge-green{background:#d1fae5;color:#065f46;} .badge-orange{background:#ffedd5;color:#9a3412;}
-    .notice { background:#fef9c3; border:1px solid #fde047; border-radius:8px; padding:12px 16px; font-size:0.84rem; margin-bottom:16px; color:#713f12; }
-    .file-date-table { font-size:0.82rem; }
-    .file-date-table td { padding:4px 10px; border-bottom:1px solid #f1f5f9; }
-    .file-date-table tr:last-child td { border-bottom:none; }
-    .no-date { color:#94a3b8; font-style:italic; }
-    /* Debug panel */
-    .debug-panel { background:#1e293b; color:#e2e8f0; border-radius:10px; padding:16px; margin-top:12px; font-size:0.78rem; font-family:monospace; max-height:260px; overflow-y:auto; display:none; }
-    .debug-panel.show { display:block; }
-    .debug-ok   { color:#4ade80; }
-    .debug-warn { color:#fbbf24; }
-    .debug-err  { color:#f87171; }
-    .prog-wrap { background:#e2e8f0; border-radius:3px; height:4px; margin-top:4px; overflow:hidden; }
-    .prog-bar  { background:#1a56db; height:100%; width:0; transition:width 0.15s; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f4f8;color:#333;font-size:14px}
+    header{background:linear-gradient(135deg,#1a56db,#0e9f6e);color:white;padding:22px 32px}
+    header h1{font-size:1.5rem}
+    header p{opacity:.85;margin-top:4px;font-size:.88rem}
+    .container{max-width:1400px;margin:28px auto;padding:0 16px}
+    .card{background:white;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:26px;margin-bottom:22px}
+    .card h2{font-size:1rem;margin-bottom:16px;color:#1a56db}
+    .upload-zone{border:2.5px dashed #93c5fd;border-radius:10px;padding:36px;text-align:center;cursor:pointer;background:#eff6ff;transition:background .2s}
+    .upload-zone:hover,.upload-zone.dragover{background:#dbeafe}
+    .upload-zone input{display:none}
+    .upload-zone .icon{font-size:2.6rem}
+    .upload-zone p{margin-top:8px;color:#555}
+    .upload-zone span{color:#1a56db;font-weight:600}
+    .file-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border-radius:8px;margin-top:8px;border:1px solid #e2e8f0;flex-wrap:wrap}
+    .file-item .fname{flex:1;min-width:180px;font-size:.88rem}
+    .file-date-badge{background:#fef9c3;border:1px solid #fde047;color:#713f12;border-radius:6px;padding:3px 10px;font-size:.78rem;white-space:nowrap}
+    .file-type-xlsx{background:#def7ec;border:1px solid #31c48d;color:#03543f;border-radius:4px;padding:1px 7px;font-size:.72rem;font-weight:700}
+    .status-ok{color:#0e9f6e;font-size:.82rem;font-weight:600;white-space:nowrap}
+    .status-err{color:#e02424;font-size:.82rem;font-weight:600}
+    .status-wait{color:#94a3b8;font-size:.82rem}
+    .btn{padding:10px 20px;border:none;border-radius:8px;font-size:.88rem;cursor:pointer;font-weight:600;transition:opacity .2s;white-space:nowrap}
+    .btn:hover{opacity:.85}.btn:disabled{opacity:.4;cursor:not-allowed}
+    .btn-primary{background:#1a56db;color:white}
+    .btn-success{background:#0e9f6e;color:white}
+    .btn-danger{background:#e02424;color:white}
+    .btn-gray{background:#6b7280;color:white}
+    .btn-outline{background:white;color:#1a56db;border:1.5px solid #1a56db}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+    .date-banner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde047;border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .date-banner .icon{font-size:1.8rem}
+    .date-banner .title{font-size:.78rem;color:#92400e;font-weight:600}
+    .date-banner .value{font-size:1.1rem;font-weight:700;color:#713f12}
+    .date-arrow{color:#d97706;font-size:1.2rem;padding:0 4px}
+    .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+    .stat-box{flex:1;min-width:130px;padding:14px 18px;border-radius:10px;text-align:center}
+    .stat-box .num{font-size:1.8rem;font-weight:700}
+    .stat-box .lbl{font-size:.76rem;margin-top:3px;opacity:.85}
+    .blue{background:#dbeafe;color:#1e40af}.green{background:#d1fae5;color:#065f46}
+    .purple{background:#ede9fe;color:#5b21b6}.orange{background:#ffedd5;color:#9a3412}
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.83rem;min-width:1050px}
+    thead tr{background:#1a56db;color:white}
+    th{padding:10px 12px;text-align:left;white-space:nowrap}
+    td{padding:9px 12px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+    tbody tr:hover{background:#f0f9ff}
+    tbody tr:nth-child(even){background:#f8fafc}
+    tbody tr:nth-child(even):hover{background:#f0f9ff}
+    .tr{text-align:right;font-weight:600}
+    tfoot tr{background:#1e3a8a;color:white;font-weight:700}
+    tfoot td{padding:10px 12px}
+    .filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+    .filter-row input,.filter-row select{padding:8px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:.86rem}
+    .filter-row input:focus,.filter-row select:focus{outline:none;border-color:#1a56db}
+    .filter-row input{flex:1;min-width:200px}
+    .tag{display:inline-block;padding:2px 7px;background:#e0f2fe;color:#0369a1;border-radius:20px;font-size:.72rem;margin:1px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600}
+    .badge-blue{background:#dbeafe;color:#1e40af}.badge-green{background:#d1fae5;color:#065f46}.badge-orange{background:#ffedd5;color:#9a3412}
+    .notice{background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:12px 16px;font-size:.84rem;margin-bottom:16px;color:#713f12}
+    .file-date-table{font-size:.82rem}
+    .file-date-table td{padding:4px 10px;border-bottom:1px solid #f1f5f9}
+    .file-date-table tr:last-child td{border-bottom:none}
+    .no-date{color:#94a3b8;font-style:italic}
+    .debug-panel{background:#1e293b;color:#e2e8f0;border-radius:10px;padding:16px;margin-top:12px;font-size:.78rem;font-family:monospace;max-height:280px;overflow-y:auto;display:none}
+    .debug-panel.show{display:block}
+    .debug-ok{color:#4ade80}.debug-warn{color:#fbbf24}.debug-err{color:#f87171}.debug-info{color:#93c5fd}
+    .prog-wrap{background:#e2e8f0;border-radius:3px;height:4px;margin-top:4px;overflow:hidden;width:100%}
+    .prog-bar{background:#1a56db;height:100%;width:0;transition:width .15s}
   </style>
 </head>
 <body>
 <header>
   <h1>💊 ระบบรวมรายการยาเพื่อสั่งซื้อ</h1>
-  <p>รองรับไฟล์ PDF และ Excel — Dispensing Summary Report</p>
+  <p>รองรับไฟล์ Excel — Dispensing Summary Report</p>
 </header>
 
 <div class="container">
   <div class="card">
     <h2>📁 ขั้นตอนที่ 1 — อัพโหลดไฟล์แต่ละหน่วยงาน</h2>
-    <div class="notice">✅ รองรับ <strong>.pdf</strong> และ <strong>.xlsx / .xls</strong> — อัพโหลดได้พร้อมกัน</div>
+    <div class="notice">✅ รองรับ <strong>.xlsx</strong> และ <strong>.xls</strong> — อัพโหลดได้หลายไฟล์พร้อมกัน</div>
     <div class="upload-zone" id="dropzone">
-      <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls" multiple />
+      <input type="file" id="fileInput" accept=".xlsx,.xls" multiple />
       <div class="icon">📂</div>
-      <p>ลากไฟล์ PDF หรือ Excel มาวางที่นี่ หรือ <span>คลิกเพื่อเลือกไฟล์</span></p>
-      <p style="font-size:0.78rem;margin-top:5px;color:#888;">รองรับ .pdf · .xlsx · .xls</p>
+      <p>ลากไฟล์ Excel มาวางที่นี่ หรือ <span>คลิกเพื่อเลือกไฟล์</span></p>
+      <p style="font-size:.78rem;margin-top:5px;color:#888;">รองรับ .xlsx · .xls</p>
     </div>
     <div id="fileList"></div>
     <div class="btn-row">
       <button class="btn btn-primary" id="processBtn" disabled onclick="processFiles()">⚙️ ประมวลผลและรวมรายการ</button>
-      <button class="btn btn-danger"  onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
-      <button class="btn btn-gray"    onclick="toggleDebug()">🔍 Debug log</button>
+      <button class="btn btn-danger" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
+      <button class="btn btn-gray" onclick="toggleDebug()">🔍 Debug log</button>
     </div>
     <div class="debug-panel" id="debugPanel"></div>
   </div>
 
-  <div class="card" id="resultCard" style="display:none;">
+  <div class="card" id="resultCard" style="display:none">
     <h2>📊 ขั้นตอนที่ 2 — สรุปรายการยารวมทุกหน่วยงาน</h2>
     <div class="date-banner">
       <div class="icon">📅</div>
       <div>
         <div class="title">ช่วงเวลาของข้อมูลรวม</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
           <span class="value" id="bannerFrom">—</span>
-          <span class="date-arrow" id="bannerArrow">→</span>
+          <span class="date-arrow">→</span>
           <span class="value" id="bannerTo">—</span>
         </div>
       </div>
-      <div style="margin-left:auto;"><table class="file-date-table" id="fileDateTable"></table></div>
+      <div style="margin-left:auto"><table class="file-date-table" id="fileDateTable"></table></div>
     </div>
     <div class="stats">
-      <div class="stat-box blue"  ><div class="num" id="statItems" >0</div><div class="lbl">รายการยา (Item code)</div></div>
-      <div class="stat-box green" ><div class="num" id="statFiles" >0</div><div class="lbl">ไฟล์ที่สำเร็จ</div></div>
+      <div class="stat-box blue"><div class="num" id="statItems">0</div><div class="lbl">รายการยา (Item code)</div></div>
+      <div class="stat-box green"><div class="num" id="statFiles">0</div><div class="lbl">ไฟล์ที่สำเร็จ</div></div>
       <div class="stat-box purple"><div class="num" id="statGroups">0</div><div class="lbl">Stock group</div></div>
-      <div class="stat-box orange"><div class="num" id="statNet"   >0</div><div class="lbl">Net รวมทั้งหมด (฿)</div></div>
+      <div class="stat-box orange"><div class="num" id="statNet">0</div><div class="lbl">Net รวม (฿)</div></div>
     </div>
     <div class="filter-row">
       <input type="text" id="searchBox" placeholder="🔍 ค้นหา Item code หรือ Item name..." oninput="renderTable()" />
-      <select id="filterType"  onchange="renderTable()"><option value="">— Item type ทั้งหมด —</option></select>
+      <select id="filterType" onchange="renderTable()"><option value="">— Item type ทั้งหมด —</option></select>
       <select id="filterGroup" onchange="renderTable()"><option value="">— Stock group ทั้งหมด —</option></select>
       <button class="btn btn-outline" onclick="resetFilters()">↺ รีเซ็ต</button>
       <button class="btn btn-success" onclick="exportExcel()">📥 ดาวน์โหลด Report Excel</button>
@@ -141,315 +132,124 @@
       <table>
         <thead>
           <tr><th>#</th><th>Item type</th><th>Item code</th><th>Item name</th>
-          <th>Stock group</th><th style="text-align:right;">Quantity รวม</th>
-          <th>UOM</th><th style="text-align:right;">Price</th>
-          <th style="text-align:right;">Net รวม (฿)</th><th>หน่วยงานที่รายงาน</th></tr>
+          <th>Stock group</th><th style="text-align:right">Quantity รวม</th>
+          <th>UOM</th><th style="text-align:right">Price</th>
+          <th style="text-align:right">Net รวม (฿)</th><th>หน่วยงาน</th></tr>
         </thead>
         <tbody id="tableBody"></tbody>
-        <tfoot  id="tableFoot"></tfoot>
+        <tfoot id="tableFoot"></tfoot>
       </table>
     </div>
   </div>
 </div>
 
 <script>
-// ============================================================
-//  State & Debug
-// ============================================================
 let uploadedFiles=[], drugMap={}, fileMetaList=[], successCount=0;
-const dbg = [];
+const dbg=[];
 
-function debugLog(msg, type='ok') {
-  dbg.push({msg, type, t: new Date().toLocaleTimeString()});
-  const el = document.getElementById('debugPanel');
-  el.innerHTML = dbg.slice(-60).map(d =>
-    `<div class="debug-${d.type}">[${d.t}] ${d.msg}</div>`
-  ).join('');
-  el.scrollTop = el.scrollHeight;
+function debugLog(msg, type='ok'){
+  dbg.push({msg, type, t:new Date().toLocaleTimeString()});
+  const el=document.getElementById('debugPanel');
+  el.innerHTML=dbg.slice(-80).map(d=>`<div class="debug-${d.type}">[${d.t}] ${d.msg}</div>`).join('');
+  el.scrollTop=el.scrollHeight;
+  console.log(`[${type}] ${msg}`);
 }
+function toggleDebug(){document.getElementById('debugPanel').classList.toggle('show')}
 
-function toggleDebug() {
-  const el = document.getElementById('debugPanel');
-  el.classList.toggle('show');
-}
+const dropzone=document.getElementById('dropzone');
+const fileInput=document.getElementById('fileInput');
+dropzone.addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>addFiles(Array.from(e.target.files)));
+dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('dragover')});
+dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop',e=>{e.preventDefault();dropzone.classList.remove('dragover');addFiles(Array.from(e.dataTransfer.files))});
 
-// ============================================================
-//  Upload zone
-// ============================================================
-const dropzone  = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-dropzone.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
-dropzone.addEventListener('dragover',  e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('dragover'); addFiles(Array.from(e.dataTransfer.files)); });
-
-function addFiles(files) {
-  const valid = files.filter(f => /\.(pdf|xlsx|xls)$/i.test(f.name));
-  if (!valid.length) { alert('กรุณาเลือกไฟล์ .pdf, .xlsx หรือ .xls เท่านั้น'); return; }
-  valid.forEach(f => { if (!uploadedFiles.find(x=>x.name===f.name&&x.size===f.size)) uploadedFiles.push(f); });
+function addFiles(files){
+  const valid=files.filter(f=>/\.(xlsx|xls)$/i.test(f.name));
+  if(!valid.length){alert('กรุณาเลือกไฟล์ .xlsx หรือ .xls เท่านั้น');return}
+  valid.forEach(f=>{if(!uploadedFiles.find(x=>x.name===f.name&&x.size===f.size))uploadedFiles.push(f)});
   renderFileList();
-  document.getElementById('processBtn').disabled = false;
+  document.getElementById('processBtn').disabled=false;
 }
-
-function renderFileList() {
-  document.getElementById('fileList').innerHTML = uploadedFiles.map((f,i) => {
-    const isPdf = /\.pdf$/i.test(f.name);
-    return `
-      <div class="file-item">
-        <span>${isPdf?'📕':'📗'}</span>
-        <span class="${isPdf?'file-type-pdf':'file-type-xlsx'}">${isPdf?'PDF':'EXCEL'}</span>
-        <span class="fname">${f.name} <span style="color:#94a3b8;font-size:0.76rem;">(${(f.size/1024).toFixed(1)} KB)</span></span>
-        <span id="st-date-${i}"></span>
-        <span id="st-${i}" class="status-wait">รอประมวลผล</span>
-        <div class="prog-wrap" id="pw-${i}" style="display:none;width:100%"><div class="prog-bar" id="pb-${i}"></div></div>
-        <button onclick="removeFile(${i})" style="border:none;background:none;cursor:pointer;color:#e02424;font-size:1.1rem;">✕</button>
-      </div>`;
-  }).join('');
+function renderFileList(){
+  document.getElementById('fileList').innerHTML=uploadedFiles.map((f,i)=>`
+    <div class="file-item">
+      <span>📗</span>
+      <span class="file-type-xlsx">EXCEL</span>
+      <span class="fname">${f.name} <span style="color:#94a3b8;font-size:.76rem">(${(f.size/1024).toFixed(1)} KB)</span></span>
+      <span id="st-date-${i}"></span>
+      <span id="st-${i}" class="status-wait">รอประมวลผล</span>
+      <button onclick="removeFile(${i})" style="border:none;background:none;cursor:pointer;color:#e02424;font-size:1.1rem">✕</button>
+    </div>`).join('');
 }
+function removeFile(i){uploadedFiles.splice(i,1);renderFileList();document.getElementById('processBtn').disabled=uploadedFiles.length===0}
+function clearAll(){uploadedFiles=[];drugMap={};fileMetaList=[];successCount=0;dbg.length=0;renderFileList();document.getElementById('processBtn').disabled=true;document.getElementById('resultCard').style.display='none';fileInput.value='';document.getElementById('debugPanel').innerHTML='';document.getElementById('debugPanel').classList.remove('show')}
 
-function removeFile(i) { uploadedFiles.splice(i,1); renderFileList(); document.getElementById('processBtn').disabled=uploadedFiles.length===0; }
-function clearAll() { uploadedFiles=[]; drugMap={}; fileMetaList=[]; successCount=0; dbg.length=0; renderFileList(); document.getElementById('processBtn').disabled=true; document.getElementById('resultCard').style.display='none'; fileInput.value=''; document.getElementById('debugPanel').innerHTML=''; }
-
-// ============================================================
-//  ประมวลผลทุกไฟล์
-// ============================================================
-async function processFiles() {
-  drugMap={}; fileMetaList=[]; successCount=0; dbg.length=0;
+async function processFiles(){
+  drugMap={};fileMetaList=[];successCount=0;dbg.length=0;
+  document.getElementById('debugPanel').innerHTML='';
   const btn=document.getElementById('processBtn');
-  btn.disabled=true; btn.textContent='⏳ กำลังประมวลผล...';
+  btn.disabled=true;btn.textContent='⏳ กำลังประมวลผล...';
 
-  for (let i=0;i<uploadedFiles.length;i++) {
+  for(let i=0;i<uploadedFiles.length;i++){
     const f=uploadedFiles[i];
     const st=document.getElementById(`st-${i}`);
     const stD=document.getElementById(`st-date-${i}`);
-    const isPdf=/\.pdf$/i.test(f.name);
-    st.textContent='⏳ กำลังอ่าน...'; st.className='status-wait'; stD.innerHTML='';
-
-    try {
-      debugLog(`เริ่ม: ${f.name} (${isPdf?'PDF':'Excel'})`);
-      const meta = isPdf ? await readPDF(f,i) : await readExcel(f);
+    st.textContent='⏳ กำลังอ่าน...';st.className='status-wait';stD.innerHTML='';
+    debugLog(`── เริ่ม [${i+1}/${uploadedFiles.length}] ${f.name}`,'info');
+    try{
+      const meta=await readExcel(f);
       fileMetaList.push(meta);
-      st.textContent=`✅ ${meta.rowCount} รายการ`; st.className='status-ok';
-      if (meta.dateFrom||meta.dateTo) {
+      st.textContent=`✅ ${meta.rowCount} รายการ`;st.className='status-ok';
+      if(meta.dateFrom||meta.dateTo)
         stD.innerHTML=`<span class="file-date-badge">📅 ${meta.dateFrom||'?'} → ${meta.dateTo||'?'}</span>`;
-      }
-      debugLog(`✅ ${f.name}: ${meta.rowCount} แถว | ${meta.dateFrom||'ไม่มีวันที่'} → ${meta.dateTo||''}`, 'ok');
+      debugLog(`✅ ${f.name}: ${meta.rowCount} แถว  ${meta.dateFrom||''}→${meta.dateTo||''}`, 'ok');
       successCount++;
-    } catch(err) {
-      st.textContent=`❌ ${err.message}`; st.className='status-err';
-      debugLog(`❌ ${f.name}: ${err.message}`, 'err');
-      fileMetaList.push({name:f.name.replace(/\.(pdf|xlsx|xls)$/i,''),dateFrom:null,dateTo:null,rowCount:0});
+    }catch(err){
+      st.textContent=`❌ ${err.message}`;st.className='status-err';
+      debugLog(`❌ ${f.name}: ${err.message}`,'err');
+      fileMetaList.push({name:f.name.replace(/\.(xlsx|xls)$/i,''),dateFrom:null,dateTo:null,rowCount:0});
     }
   }
 
-  btn.disabled=false; btn.textContent='⚙️ ประมวลผลและรวมรายการ';
-  const total = Object.keys(drugMap).length;
-  debugLog(`สรุป: พบ ${total} รายการยาจาก ${successCount} ไฟล์`, total>0?'ok':'warn');
+  btn.disabled=false;btn.textContent='⚙️ ประมวลผลและรวมรายการ';
+  const total=Object.keys(drugMap).length;
+  debugLog(`══ สรุป: ${total} รายการยา จาก ${successCount} ไฟล์`, total>0?'ok':'warn');
 
-  if (total>0) { buildFilters(); showResult(); }
-  else {
+  if(total>0){buildFilters();showResult();}
+  else{
     document.getElementById('debugPanel').classList.add('show');
     alert('ไม่พบข้อมูล — กรุณาดู Debug log ด้านล่าง');
   }
 }
 
-// ============================================================
-//  Helper
-// ============================================================
-function cleanDate(s) {
-  if (!s) return null;
-  s = s.toString().trim();
+function cleanDate(s){
+  if(!s) return null;
+  s=s.toString().trim().replace(/\s+/g,' ');
   const m1=s.match(/^(\d{1,2})[\s\-\/](\d{1,2})[\s\-\/](\d{4})/);
-  if (m1) return `${m1[1].padStart(2,'0')}/${m1[2].padStart(2,'0')}/${m1[3]}`;
+  if(m1) return `${m1[1].padStart(2,'0')}/${m1[2].padStart(2,'0')}/${m1[3]}`;
   const m2=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m2) return `${m2[3]}/${m2[2]}/${m2[1]}`;
+  if(m2) return `${m2[3]}/${m2[2]}/${m2[1]}`;
   return s;
 }
 
-function addToDrugMap(item, sourceName) {
-  const {itemType,itemCode,itemName,stockGroup,qty,uom,price}=item;
-  if (!itemCode || qty===0) return false;
+function addToDrugMap(item, sourceName){
+  const{itemType,itemCode,itemName,stockGroup,qty,uom,price}=item;
+  if(!itemCode||qty===0) return false;
   const net=qty*price;
-  if (!drugMap[itemCode]) drugMap[itemCode]={itemType,itemCode,itemName,stockGroup,totalQty:0,uom,price,totalNet:0,sources:[]};
+  if(!drugMap[itemCode]) drugMap[itemCode]={itemType,itemCode,itemName,stockGroup,totalQty:0,uom,price,totalNet:0,sources:[]};
   const d=drugMap[itemCode];
-  d.totalQty+=qty; d.totalNet+=net;
-  if (!d.itemType   &&itemType)   d.itemType  =itemType;
-  if (!d.itemName   &&itemName)   d.itemName  =itemName;
-  if (!d.stockGroup &&stockGroup) d.stockGroup=stockGroup;
-  if (!d.uom        &&uom)        d.uom       =uom;
-  if (d.price===0   &&price>0)    d.price     =price;
-  if (!d.sources.includes(sourceName)) d.sources.push(sourceName);
+  d.totalQty+=qty;d.totalNet+=net;
+  if(!d.itemType&&itemType)     d.itemType=itemType;
+  if(!d.itemName&&itemName)     d.itemName=itemName;
+  if(!d.stockGroup&&stockGroup) d.stockGroup=stockGroup;
+  if(!d.uom&&uom)               d.uom=uom;
+  if(d.price===0&&price>0)      d.price=price;
+  if(!d.sources.includes(sourceName)) d.sources.push(sourceName);
   return true;
 }
 
-// ============================================================
-//  PDF PARSER
-// ============================================================
-async function readPDF(file, fileIdx) {
-  const ab  = await file.arrayBuffer();
-  debugLog(`  PDF.js loading... pages`);
-
-  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(ab)}).promise;
-  const sourceName = file.name.replace(/\.pdf$/i,'');
-  let dateFrom=null, dateTo=null, rowCount=0;
-  let colX=null; // { field: xMin }
-
-  debugLog(`  หน้าทั้งหมด: ${pdf.numPages}`);
-
-  for (let p=1; p<=pdf.numPages; p++) {
-    // Progress
-    const pw=document.getElementById(`pw-${fileIdx}`);
-    const pb=document.getElementById(`pb-${fileIdx}`);
-    if(pw){pw.style.display='block'; pb.style.width=`${Math.round(p/pdf.numPages*100)}%`;}
-
-    const page = await pdf.getPage(p);
-    const tc   = await page.getTextContent();
-
-    // ===== รวม text items เป็น lines โดยใช้ y-position =====
-    // ใช้ Map<yKey, items[]>
-    const lineMap = new Map();
-    for (const item of tc.items) {
-      if (!item.str || !item.str.trim()) continue;
-      // ปัดเป็น integer เพื่อ group บรรทัดเดียวกัน
-      const y = Math.round(item.transform[5]);
-      // ใช้ range เล็กๆ: รวมทุก y ที่ต่างกันไม่เกิน 2 หน่วย
-      let key = y;
-      for (const k of lineMap.keys()) {
-        if (Math.abs(k-y)<=2) { key=k; break; }
-      }
-      if (!lineMap.has(key)) lineMap.set(key,[]);
-      lineMap.get(key).push({x:item.transform[4], text:item.str.trim()});
-    }
-
-    // เรียง lines บนลงล่าง (y สูง = บนหน้า)
-    const sortedYs=[...lineMap.keys()].sort((a,b)=>b-a);
-
-    for (const y of sortedYs) {
-      const items=lineMap.get(y).sort((a,b)=>a.x-b.x);
-      const lineText=items.map(i=>i.text).join(' ');
-
-      // ----- สกัดวันที่ -----
-      if (!dateFrom && /from.*date/i.test(lineText)) {
-        const mF=lineText.match(/from\s*date\s*[:\-]\s*([\d\s\-]+?)(?=\s*to\s*date|$)/i);
-        const mT=lineText.match(/to\s*date\s*[:\-]\s*([\d\s\-]+)/i);
-        if (mF) { dateFrom=cleanDate(mF[1].trim()); debugLog(`  From: ${dateFrom}`); }
-        if (mT) { dateTo  =cleanDate(mT[1].trim()); debugLog(`  To  : ${dateTo}`); }
-      }
-
-      // ----- ตรวจจับ Header row (มี Item Code + Quantity + UOM) -----
-      const ltLow=lineText.toLowerCase();
-      if (!colX && ltLow.includes('item code') && ltLow.includes('quantity') && ltLow.includes('uom')) {
-        colX = buildColX(items);
-        debugLog(`  Header found at y=${y}: ${JSON.stringify(colX)}`,'ok');
-        continue;
-      }
-      // Header ซ้ำในหน้าถัดไป
-      if (colX && ltLow.includes('item code') && ltLow.includes('quantity')) continue;
-      if (!colX) continue;
-
-      // ----- Skip footer -----
-      if (/printed date/i.test(lineText)) continue;
-      if (/dispensing summary/i.test(lineText)) continue;
-      if (/chularat/i.test(lineText)) continue;
-      if (/^page\s+\d/i.test(lineText.trim())) continue;
-      if (lineText.trim()==='') continue;
-
-      // ----- Skip section headers (x < itemType column) -----
-      const minX=items[0].x;
-      if (minX < (colX.itemType-15)) continue;
-
-      // ----- parse data row -----
-      const row=parseRow(items, colX);
-      if (!row || !row.itemCode || row.qty===0) continue;
-      if (addToDrugMap(row, sourceName)) rowCount++;
-    }
-  }
-
-  // ซ่อน progress
-  const pw=document.getElementById(`pw-${fileIdx}`);
-  if(pw) pw.style.display='none';
-
-  debugLog(`  rowCount=${rowCount}`, rowCount>0?'ok':'warn');
-  return {name:sourceName, dateFrom, dateTo, rowCount};
-}
-
-// สร้าง colX จาก header row items
-function buildColX(items) {
-  const cols={};
-  // keyword → field
-  const MAP2={
-    'item type':'itemType','item code':'itemCode',
-    'item name':'itemName','stock group':'stockGroup','net amount':'net'
-  };
-  const MAP1={
-    'quantity':'quantity','qty':'quantity',
-    'uom':'uom','unit':'uom',
-    'price':'price','net':'net'
-  };
-
-  let i=0;
-  while(i<items.length){
-    const t1=items[i].text.trim();
-    const t2=i+1<items.length ? items[i+1].text.trim() : '';
-    const combined=(t1+' '+t2).toLowerCase();
-
-    // ลอง 2 คำก่อน
-    let matched=false;
-    for(const[kw,field] of Object.entries(MAP2)){
-      if(combined===kw){
-        if(!cols[field]) cols[field]=items[i].x;
-        i+=2; matched=true; break;
-      }
-    }
-    if(matched) continue;
-
-    // 1 คำ
-    const tl=t1.toLowerCase();
-    for(const[kw,field] of Object.entries(MAP1)){
-      if(tl===kw){ if(!cols[field]) cols[field]=items[i].x; break; }
-    }
-    // กรณีที่ item เดียวมีทั้ง 2 คำ เช่น "Item Code" หรือ "Net Amount"
-    for(const[kw,field] of Object.entries(MAP2)){
-      if(tl===kw){ if(!cols[field]) cols[field]=items[i].x; break; }
-    }
-    i++;
-  }
-
-  return cols;
-}
-
-// แบ่ง text items เข้า column ตาม x-range
-function parseRow(items, colX) {
-  const sorted=Object.entries(colX).sort((a,b)=>a[1]-b[1]);
-  const assigned={};
-  for(const[f] of sorted) assigned[f]=[];
-
-  for(const item of items){
-    for(let i=0;i<sorted.length;i++){
-      const[field,fx]=sorted[i];
-      const nextFx=i+1<sorted.length?sorted[i+1][1]:Infinity;
-      if(item.x>=fx-8 && item.x<nextFx){
-        assigned[field].push(item.text); break;
-      }
-    }
-  }
-
-  const itemType  =(assigned.itemType  ||[]).join(' ').trim();
-  const itemCode  =(assigned.itemCode  ||[]).join('').trim();
-  const itemName  =(assigned.itemName  ||[]).join(' ').trim();
-  const stockGroup=(assigned.stockGroup||[]).join(' ').trim();
-  const uom       =(assigned.uom       ||[]).join(' ').trim();
-  const qty       =parseFloat((assigned.quantity||[]).join('').replace(/,/g,''))||0;
-  const price     =parseFloat((assigned.price   ||[]).join('').replace(/,/g,''))||0;
-
-  return {itemType,itemCode,itemName,stockGroup,qty,uom,price};
-}
-
-// ============================================================
-//  EXCEL PARSER
-// ============================================================
-const ALIASES_XL={
+const ALIASES={
   itemType  :['item type','itemtype','type','ประเภท','ประเภทยา'],
   itemCode  :['item code','itemcode','code','รหัส','รหัสยา','drug code'],
   itemName  :['item name','itemname','name','ชื่อยา','ชื่อ','drug name'],
@@ -465,7 +265,6 @@ function findHeaderCol(headers,aliases){
   for(const a of aliases){const i=headers.findIndex(h=>h.toLowerCase().includes(a.toLowerCase()));if(i!==-1)return i;}
   return -1;
 }
-
 function resolveDataCol(rows,hRow,hCol){
   if(hCol===-1) return -1;
   const counts=[0,0,0];let checked=0;
@@ -478,9 +277,8 @@ function resolveDataCol(rows,hRow,hCol){
   let best=0;for(let o=1;o<=2;o++)if(counts[o]>counts[best])best=o;
   return hCol+best;
 }
-
 function findHeaderRow(rows){
-  const allA=Object.values(ALIASES_XL).flat();
+  const allA=Object.values(ALIASES).flat();
   let bRow=0,bScore=0;
   for(let r=0;r<Math.min(15,rows.length);r++){
     const cells=rows[r].map(h=>(h||'').toString().trim().toLowerCase());
@@ -489,17 +287,18 @@ function findHeaderRow(rows){
   }
   return bRow;
 }
-
 function extractDatesXL(rows){
   let dF=null,dT=null;
   for(const row of rows.slice(0,15)){
     for(let c=0;c<row.length;c++){
       const cell=row[c]!=null?row[c].toString().trim():'';
       if(!cell) continue;
-      const isF=/from\s*(date)?\s*[:\-]?\s*$/i.test(cell);
-      const isT=/\bto\s*(date)?\s*[:\-]?\s*$/i.test(cell);
-      if(isF&&!dF){for(let nc=c+1;nc<=c+5&&nc<row.length;nc++){const v=row[nc]!=null?row[nc].toString().trim():'';if(v&&/\d/.test(v)){dF=cleanDate(v);break;}}}
-      if(isT&&!dT){for(let nc=c+1;nc<=c+5&&nc<row.length;nc++){const v=row[nc]!=null?row[nc].toString().trim():'';if(v&&/\d/.test(v)){dT=cleanDate(v);break;}}}
+      if(/from\s*(date)?\s*[:\-]?\s*$/i.test(cell)&&!dF){
+        for(let nc=c+1;nc<=c+5&&nc<row.length;nc++){const v=row[nc]!=null?row[nc].toString().trim():'';if(v&&/\d/.test(v)){dF=cleanDate(v);break;}}
+      }
+      if(/\bto\s*(date)?\s*[:\-]?\s*$/i.test(cell)&&!dT){
+        for(let nc=c+1;nc<=c+5&&nc<row.length;nc++){const v=row[nc]!=null?row[nc].toString().trim():'';if(v&&/\d/.test(v)){dT=cleanDate(v);break;}}
+      }
       const mF=cell.match(/from\s*(?:date)?\s*[:\-]\s*([\d\s\-\/]+?)(?=\s*to\s|$)/i);
       const mT=cell.match(/to\s*(?:date)?\s*[:\-]\s*([\d\s\-\/]+)/i);
       if(mF&&!dF) dF=cleanDate(mF[1].trim());
@@ -522,14 +321,14 @@ async function readExcel(file){
         const{dateFrom,dateTo}=extractDatesXL(rows);
         const hRow=findHeaderRow(rows);
         const headers=rows[hRow].map(h=>(h||'').toString().trim());
-        debugLog(`  Excel header row=${hRow}: ${headers.filter(h=>h).join(', ')}`);
+        debugLog(`  Excel hRow=${hRow}: ${headers.filter(h=>h).slice(0,8).join(' | ')}`,'info');
         const rawCI={};
-        for(const field of Object.keys(ALIASES_XL)) rawCI[field]=findHeaderCol(headers,ALIASES_XL[field]);
+        for(const field of Object.keys(ALIASES)) rawCI[field]=findHeaderCol(headers,ALIASES[field]);
         if(rawCI.itemCode===-1) throw new Error('ไม่พบคอลัมน์ Item Code');
         if(rawCI.quantity===-1) throw new Error('ไม่พบคอลัมน์ Quantity');
         const ci={};
         for(const[f,idx] of Object.entries(rawCI)) ci[f]=resolveDataCol(rows,hRow,idx);
-        debugLog(`  Excel colMap: ${JSON.stringify(ci)}`);
+        debugLog(`  colMap: ${Object.entries(ci).map(([k,v])=>`${k}=${v}`).join(', ')}`,'info');
         const sourceName=file.name.replace(/\.(xlsx|xls)$/i,'');
         let rowCount=0;
         for(let r=hRow+1;r<rows.length;r++){
@@ -557,17 +356,14 @@ async function readExcel(file){
   });
 }
 
-// ============================================================
-//  Filters / Result / Table / Export
-// ============================================================
 function buildFilters(){
   const types=[...new Set(Object.values(drugMap).map(d=>d.itemType).filter(Boolean))].sort();
   const groups=[...new Set(Object.values(drugMap).map(d=>d.stockGroup).filter(Boolean))].sort();
   document.getElementById('filterType').innerHTML =`<option value="">— Item type ทั้งหมด —</option>`+types.map(t=>`<option value="${t}">${t}</option>`).join('');
   document.getElementById('filterGroup').innerHTML=`<option value="">— Stock group ทั้งหมด —</option>`+groups.map(g=>`<option value="${g}">${g}</option>`).join('');
 }
-function resetFilters(){document.getElementById('searchBox').value='';document.getElementById('filterType').value='';document.getElementById('filterGroup').value='';renderTable();}
-function toSortable(s){if(!s)return'';const m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);if(!m)return s;let y=parseInt(m[3]);if(y>2400)y-=543;return`${y.toString().padStart(4,'0')}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
+function resetFilters(){document.getElementById('searchBox').value='';document.getElementById('filterType').value='';document.getElementById('filterGroup').value='';renderTable()}
+function toSortable(s){if(!s)return'';const m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);if(!m)return s;let y=parseInt(m[3]);if(y>2400)y-=543;return`${y.toString().padStart(4,'0')}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`}
 
 function showResult(){
   const allRows=Object.values(drugMap);
@@ -583,14 +379,13 @@ function showResult(){
   const oT=allT.length?allT.sort((a,b)=>toSortable(b).localeCompare(toSortable(a)))[0]:null;
   document.getElementById('bannerFrom').textContent=oF||'—';
   document.getElementById('bannerTo').textContent  =oT||'—';
-  document.getElementById('bannerArrow').style.display=(oF||oT)?'':'none';
-  document.getElementById('fileDateTable').innerHTML=fileMetaList.map((m,i)=>`
+  document.getElementById('fileDateTable').innerHTML=fileMetaList.map(m=>`
     <tr>
-      <td>${/\.pdf$/i.test(uploadedFiles[i]?.name||'')?'📕':'📗'} ${m.name}</td>
+      <td>📗 ${m.name}</td>
       <td>${m.dateFrom||'<span class="no-date">—</span>'}</td>
-      <td style="color:#d97706;padding:0 6px;">→</td>
+      <td style="color:#d97706;padding:0 6px">→</td>
       <td>${m.dateTo||'<span class="no-date">—</span>'}</td>
-      <td style="color:#94a3b8;padding-left:8px;font-size:0.76rem;">${m.rowCount} รายการ</td>
+      <td style="color:#94a3b8;padding-left:8px;font-size:.76rem">${m.rowCount} รายการ</td>
     </tr>`).join('');
   document.getElementById('resultCard').style.display='block';
   renderTable();
@@ -603,16 +398,16 @@ function renderTable(){
   const fG=document.getElementById('filterGroup').value;
   let rows=Object.values(drugMap).filter(d=>{
     if(q&&!d.itemCode.toLowerCase().includes(q)&&!d.itemName.toLowerCase().includes(q))return false;
-    if(fT&&d.itemType  !==fT)return false;
+    if(fT&&d.itemType!==fT)return false;
     if(fG&&d.stockGroup!==fG)return false;
     return true;
   });
-  rows.sort((a,b)=>{const g=a.stockGroup.localeCompare(b.stockGroup,'th');return g!==0?g:a.itemCode.localeCompare(b.itemCode,'th');});
+  rows.sort((a,b)=>{const g=(a.stockGroup||'').localeCompare(b.stockGroup||'','th');return g!==0?g:a.itemCode.localeCompare(b.itemCode,'th')});
   const tbody=document.getElementById('tableBody');
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:28px;color:#94a3b8;">ไม่พบรายการ</td></tr>`;document.getElementById('tableFoot').innerHTML='';return;}
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:28px;color:#94a3b8">ไม่พบรายการ</td></tr>`;document.getElementById('tableFoot').innerHTML='';return}
   const tQ=rows.reduce((s,d)=>s+d.totalQty,0),tN=rows.reduce((s,d)=>s+d.totalNet,0);
   const tc={},pal=['badge-blue','badge-green','badge-orange'];let pi=0;
-  rows.forEach(d=>{if(d.itemType&&!tc[d.itemType])tc[d.itemType]=pal[pi++%pal.length];});
+  rows.forEach(d=>{if(d.itemType&&!tc[d.itemType])tc[d.itemType]=pal[pi++%pal.length]});
   tbody.innerHTML=rows.map((d,i)=>`
     <tr>
       <td>${i+1}</td>
@@ -627,17 +422,21 @@ function renderTable(){
       <td>${d.sources.map(s=>`<span class="tag">${s}</span>`).join('')}</td>
     </tr>`).join('');
   document.getElementById('tableFoot').innerHTML=`
-    <tr><td colspan="5" style="text-align:right;">รวมทั้งหมด (${rows.length} รายการ)</td>
-    <td class="tr">${tQ.toLocaleString()}</td><td></td><td></td>
-    <td class="tr">${tN.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td></td></tr>`;
+    <tr>
+      <td colspan="5" style="text-align:right">รวมทั้งหมด (${rows.length} รายการ)</td>
+      <td class="tr">${tQ.toLocaleString()}</td>
+      <td></td><td></td>
+      <td class="tr">${tN.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td></td>
+    </tr>`;
 }
 
 function exportExcel(){
-  const allRows=Object.values(drugMap).sort((a,b)=>{const g=a.stockGroup.localeCompare(b.stockGroup,'th');return g!==0?g:a.itemCode.localeCompare(b.itemCode,'th');});
+  const allRows=Object.values(drugMap).sort((a,b)=>{const g=(a.stockGroup||'').localeCompare(b.stockGroup||'','th');return g!==0?g:a.itemCode.localeCompare(b.itemCode,'th')});
   const tQ=allRows.reduce((s,d)=>s+d.totalQty,0),tN=allRows.reduce((s,d)=>s+d.totalNet,0);
-  const fT=document.getElementById('bannerFrom').textContent,tT=document.getElementById('bannerTo').textContent;
+  const fT=document.getElementById('bannerFrom').textContent,tTo=document.getElementById('bannerTo').textContent;
   const hD=fT&&fT!=='—';
-  const pl=hD?`${fT}  ถึง  ${tT}`:'ไม่ระบุ';
+  const pl=hD?`${fT}  ถึง  ${tTo}`:'ไม่ระบุ';
   const today=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
   const ws1d=[
     ['รายการยารวมเพื่อการสั่งซื้อ'],
@@ -645,23 +444,26 @@ function exportExcel(){
     [`ช่วงเวลาของข้อมูล: ${pl}`],
     [`จำนวนหน่วยงาน: ${uploadedFiles.length} หน่วย  |  ไฟล์สำเร็จ: ${successCount} ไฟล์`],
     [],
-    ['#','Item type','Item code','Item name','Stock group','Quantity รวม','UOM','Price','Net รวม','หน่วยงานที่รายงาน'],
+    ['#','Item type','Item code','Item name','Stock group','Quantity รวม','UOM','Price','Net รวม','หน่วยงาน'],
     ...allRows.map((d,i)=>[i+1,d.itemType,d.itemCode,d.itemName,d.stockGroup,d.totalQty,d.uom,d.price||'',d.totalNet,d.sources.join(', ')]),
     [],['','','','','รวมทั้งหมด',tQ,'','',tN,'']
   ];
   const ws1=XLSX.utils.aoa_to_sheet(ws1d);
   ws1['!cols']=[{wch:5},{wch:12},{wch:16},{wch:40},{wch:16},{wch:14},{wch:8},{wch:12},{wch:16},{wch:50}];
   ws1['!merges']=[{s:{r:0,c:0},e:{r:0,c:9}}];
+
   const ws2d=[['ช่วงวันที่ของแต่ละหน่วยงาน'],[`ข้อมูลรวม: ${pl}`],[],
     ['หน่วยงาน','From','To','จำนวนรายการ'],
     ...fileMetaList.map(m=>[m.name,m.dateFrom||'(ไม่พบ)',m.dateTo||'(ไม่พบ)',m.rowCount]),
-    [],['รวม',hD?fT:'',hD?tT:'',fileMetaList.reduce((s,m)=>s+(m.rowCount||0),0)]];
+    [],['รวม',hD?fT:'',hD?tTo:'',fileMetaList.reduce((s,m)=>s+(m.rowCount||0),0)]];
   const ws2=XLSX.utils.aoa_to_sheet(ws2d);ws2['!cols']=[{wch:45},{wch:16},{wch:16},{wch:14}];
-  const gm={};allRows.forEach(d=>{const g=d.stockGroup||'(ไม่ระบุ)';if(!gm[g])gm[g]={q:0,n:0,c:0};gm[g].q+=d.totalQty;gm[g].n+=d.totalNet;gm[g].c+=1;});
+
+  const gm={};allRows.forEach(d=>{const g=d.stockGroup||'(ไม่ระบุ)';if(!gm[g])gm[g]={q:0,n:0,c:0};gm[g].q+=d.totalQty;gm[g].n+=d.totalNet;gm[g].c+=1});
   const ws3d=[['สรุปตาม Stock group'],[`ช่วงเวลา: ${pl}`],[],['Stock group','จำนวน Item','Quantity รวม','Net รวม']];
   Object.entries(gm).sort().forEach(([g,v])=>ws3d.push([g,v.c,v.q,v.n]));
   ws3d.push(['รวมทั้งหมด',allRows.length,tQ,tN]);
   const ws3=XLSX.utils.aoa_to_sheet(ws3d);ws3['!cols']=[{wch:22},{wch:12},{wch:14},{wch:16}];
+
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws1,'รายการยารวม');
   XLSX.utils.book_append_sheet(wb,ws2,'ช่วงวันที่แต่ละไฟล์');
